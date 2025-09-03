@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InsulinTrack - Smart Diabetes Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hover-scale { transition: transform 0.3s ease; }
+        .hover-scale:hover { transform: scale(1.05); }
+        .hover-glow { transition: box-shadow 0.3s ease; }
+        .hover-glow:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        .section { min-height: 100vh; padding: 2rem 0; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .btn-primary { background: linear-gradient(45deg, #3b82f6, #1d4ed8); }
+        .btn-primary:hover { background: linear-gradient(45deg, #1d4ed8, #1e40af); }
+        .nav-item { transition: all 0.3s ease; }
+        .nav-item:hover { color: #3b82f6; transform: translateY(-2px); }
+        @media print { .no-print { display: none !important; } }
+        .chart-container { height: 400px; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg fixed w-full top-0 z-50 no-print">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-syringe text-blue-600 text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-gray-800">InsulinTrack</span>
+                </div>
+                <div class="hidden md:flex space-x-6">
+                    <a href="#home" class="nav-item text-gray-600 hover:text-blue-600 font-medium">Home</a>
+                    <a href="#dashboard" class="nav-item text-gray-600 hover:text-blue-600 font-medium">Dashboard</a>
+                    <a href="#log-injection" class="nav-item text-gray-600 hover:text-blue-600 font-medium">Log Injection</a>
+                    <a href="#history" class="nav-item text-gray-600 hover:text-blue-600 font-medium">History</a>
+                    <a href="#settings" class="nav-item text-gray-600 hover:text-blue-600 font-medium">Settings</a>
+                    <button id="authBtn" class="btn-primary text-white px-4 py-2 rounded-lg hover-scale">Login</button>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobileMenu" class="text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Landing Page -->
+    <section id="home" class="section gradient-bg text-white">
+        <div class="container mx-auto px-6 text-center">
+            <div class="max-w-4xl mx-auto">
+                <i class="fas fa-heart-pulse text-6xl mb-6 text-white opacity-90"></i>
+                <h1 class="text-5xl font-bold mb-6">Smart Insulin Management</h1>
+                <p class="text-xl mb-8 opacity-90">Track your insulin injections accurately, prevent overdose and underdosage, and take control of your diabetes management with InsulinTrack.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button class="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover-scale hover-glow">
+                        <i class="fas fa-rocket mr-2"></i>Get Started
+                    </button>
+                    <button class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover-scale hover:bg-white hover:text-blue-600">
+                        <i class="fas fa-info-circle mr-2"></i>Learn More
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container mx-auto px-6 mt-16">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white bg-opacity-10 p-6 rounded-lg card-hover">
+                    <i class="fas fa-clock text-3xl mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Accurate Timing</h3>
+                    <p class="opacity-90">Never miss or double-dose your insulin with precise injection tracking and smart reminders.</p>
+                </div>
+                <div class="bg-white bg-opacity-10 p-6 rounded-lg card-hover">
+                    <i class="fas fa-chart-line text-3xl mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Visual Analytics</h3>
+                    <p class="opacity-90">Monitor your injection patterns and diabetes management progress with detailed charts and insights.</p>
+                </div>
+                <div class="bg-white bg-opacity-10 p-6 rounded-lg card-hover">
+                    <i class="fas fa-shield-alt text-3xl mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Safety First</h3>
+                    <p class="opacity-90">Prevent dangerous overdose and underdosage situations with intelligent safety features and warnings.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="dashboard" class="section bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">
+                <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>Dashboard
+            </h2>
+            
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Quick Actions -->
+                <div class="lg:col-span-1">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white card-hover">
+                        <h3 class="text-xl font-semibold mb-4">
+                            <i class="fas fa-syringe mr-2"></i>Quick Actions
+                        </h3>
+                        <button id="quickLogBtn" class="w-full bg-white text-blue-600 py-4 rounded-lg font-semibold hover-scale mb-3">
+                            <i class="fas fa-plus mr-2"></i>Log Injection Now
+                        </button>
+                        <button class="w-full bg-blue-400 text-white py-3 rounded-lg hover-scale mb-3">
+                            <i class="fas fa-history mr-2"></i>View History
+                        </button>
+                        <button class="w-full bg-blue-400 text-white py-3 rounded-lg hover-scale">
+                            <i class="fas fa-calendar-alt mr-2"></i>Set Reminder
+                        </button>
+                    </div>
+
+                    <!-- Today's Summary -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg mt-6 card-hover">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">
+                            <i class="fas fa-calendar-day mr-2 text-green-600"></i>Today's Summary
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Total Injections:</span>
+                                <span id="todayCount" class="font-semibold text-blue-600">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Total Units:</span>
+                                <span id="todayUnits" class="font-semibold text-green-600">0 IU</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Last Injection:</span>
+                                <span id="lastInjection" class="font-semibold text-gray-800">None</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white p-6 rounded-xl shadow-lg card-hover">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">
+                            <i class="fas fa-chart-bar mr-2 text-purple-600"></i>Weekly Injection Pattern
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Injections -->
+            <div class="mt-8 bg-white p-6 rounded-xl shadow-lg card-hover">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">
+                    <i class="fas fa-clock mr-2 text-orange-600"></i>Recent Injections
+                </h3>
+                <div id="recentInjections" class="space-y-3">
+                    <div class="text-gray-500 text-center py-8">No injections logged yet. Click "Log Injection Now" to get started!</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Log Injection -->
+    <section id="log-injection" class="section bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">
+                <i class="fas fa-edit mr-3 text-green-600"></i>Log Injection
+            </h2>
+            
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white p-8 rounded-xl shadow-lg card-hover">
+                    <form id="injectionForm">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">
+                                    <i class="fas fa-clock mr-2 text-blue-600"></i>Injection Time
+                                </label>
+                                <input type="datetime-local" id="injectionTime" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">
+                                    <i class="fas fa-tint mr-2 text-red-600"></i>Dose (Units)
+                                </label>
+                                <input type="number" id="dose" placeholder="Enter dose in units" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required min="1" max="100">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-gray-700 font-semibold mb-2">
+                                <i class="fas fa-prescription-bottle mr-2 text-purple-600"></i>Insulin Type
+                            </label>
+                            <select id="insulinType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                                <option value="">Select insulin type</option>
+                                <option value="rapid-acting">Rapid-Acting (Humalog, NovoLog)</option>
+                                <option value="short-acting">Short-Acting (Regular)</option>
+                                <option value="intermediate-acting">Intermediate-Acting (NPH)</option>
+                                <option value="long-acting">Long-Acting (Lantus, Levemir)</option>
+                                <option value="ultra-long-acting">Ultra Long-Acting (Tresiba)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-gray-700 font-semibold mb-2">
+                                <i class="fas fa-map-marker-alt mr-2 text-green-600"></i>Injection Site
+                            </label>
+                            <select id="injectionSite" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Select injection site</option>
+                                <option value="abdomen">Abdomen</option>
+                                <option value="thigh">Thigh</option>
+                                <option value="arm">Upper Arm</option>
+                                <option value="buttocks">Buttocks</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-gray-700 font-semibold mb-2">
+                                <i class="fas fa-sticky-note mr-2 text-yellow-600"></i>Notes (Optional)
+                            </label>
+                            <textarea id="notes" placeholder="Add any notes about this injection..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="flex gap-4 mt-8">
+                            <button type="submit" class="flex-1 btn-primary text-white py-4 rounded-lg font-semibold hover-scale">
+                                <i class="fas fa-save mr-2"></i>Save Injection
+                            </button>
+                            <button type="button" id="useCurrentTime" class="px-6 py-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 hover-scale">
+                                <i class="fas fa-clock mr-2"></i>Use Now
+                            </button>
+                            <button type="button" id="resetForm" class="px-6 py-4 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 hover-scale">
+                                <i class="fas fa-undo mr-2"></i>Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- History -->
+    <section id="history" class="section bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">
+                <i class="fas fa-history mr-3 text-indigo-600"></i>Injection History
+            </h2>
+            
+            <!-- Filters -->
+            <div class="bg-gray-50 p-6 rounded-xl mb-8">
+                <div class="grid md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Filter by Date</label>
+                        <select id="dateFilter" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Insulin Type</label>
+                        <select id="typeFilter" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="all">All Types</option>
+                            <option value="rapid-acting">Rapid-Acting</option>
+                            <option value="short-acting">Short-Acting</option>
+                            <option value="intermediate-acting">Intermediate-Acting</option>
+                            <option value="long-acting">Long-Acting</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Search</label>
+                        <input type="text" id="searchInput" placeholder="Search notes..." class="w-full p-3 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="flex items-end">
+                        <button id="exportData" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 hover-scale">
+                            <i class="fas fa-download mr-2"></i>Export CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- History Table -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dose</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                    <i class="fas fa-database text-4xl mb-4 text-gray-300"></i>
+                                    <div>No injection records found. Start logging your injections to see them here!</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="section bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">
+                <i class="fas fa-cog mr-3 text-gray-600"></i>Settings
+            </h2>
+            
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Profile Settings -->
+                <div class="bg-white p-6 rounded-xl shadow-lg card-hover">
+                    <h3 class="text-xl font-semibold mb-6 text-gray-800">
+                        <i class="fas fa-user mr-2 text-blue-600"></i>Profile Settings
+                    </h3>
+                    <form id="profileForm">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Full Name</label>
+                                <input type="text" id="fullName" placeholder="Enter your full name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Email Address</label>
+                                <input type="email" id="email" placeholder="Enter your email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Diabetes Type</label>
+                                <select id="diabetesType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select type</option>
+                                    <option value="type1">Type 1 Diabetes</option>
+                                    <option value="type2">Type 2 Diabetes</option>
+                                    <option value="gestational">Gestational Diabetes</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full btn-primary text-white py-3 rounded-lg hover-scale">
+                                <i class="fas fa-save mr-2"></i>Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Schedule Settings -->
+                <div class="bg-white p-6 rounded-xl shadow-lg card-hover">
+                    <h3 class="text-xl font-semibold mb-6 text-gray-800">
+                        <i class="fas fa-calendar-alt mr-2 text-green-600"></i>Injection Schedule
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Morning Injection</label>
+                            <input type="time" id="morningTime" class="w-full p-3 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Evening Injection</label>
+                            <input type="time" id="eveningTime" class="w-full p-3 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Meal-time Injections</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="time" id="breakfastTime" placeholder="Breakfast" class="p-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="time" id="lunchTime" placeholder="Lunch" class="p-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="time" id="dinnerTime" placeholder="Dinner" class="p-2 border border-gray-300 rounded-lg text-sm">
+                            </div>
+                        </div>
+                        <button class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 hover-scale">
+                            <i class="fas fa-save mr-2"></i>Save Schedule
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notification Settings -->
+                <div class="bg-white p-6 rounded-xl shadow-lg card-hover">
+                    <h3 class="text-xl font-semibold mb-6 text-gray-800">
+                        <i class="fas fa-bell mr-2 text-yellow-600"></i>Notification Settings
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">Browser Notifications</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="browserNotifications" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">Email Reminders</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="emailNotifications" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">Reminder Before Meal</span>
+                            <select class="p-2 border border-gray-300 rounded-lg">
+                                <option value="15">15 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Settings -->
+                <div class="bg-white p-6 rounded-xl shadow-lg card-hover">
+                    <h3 class="text-xl font-semibold mb-6 text-gray-800">
+                        <i class="fas fa-sliders-h mr-2 text-purple-600"></i>App Settings
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">Dark Mode</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="darkMode" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">Auto-backup Data</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="autoBackup" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Units Display</label>
+                            <select class="w-full p-3 border border-gray-300 rounded-lg">
+                                <option value="units">Units (IU)</option>
+                                <option value="ml">Milliliters (mL)</option>
+                            </select>
+                        </div>
+                        <button class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 hover-scale">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 no-print">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-syringe text-blue-400 text-2xl mr-3"></i>
+                        <span class="text-xl font-bold">InsulinTrack</span>
+                    </div>
+                    <p class="text-gray-400">Empowering diabetes management through smart insulin tracking and safety features.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#home" class="hover:text-white nav-item">Home</a></li>
+                        <li><a href="#dashboard" class="hover:text-white nav-item">Dashboard</a></li>
+                        <li><a href="#log-injection" class="hover:text-white nav-item">Log Injection</a></li>
+                        <li><a href="#history" class="hover:text-white nav-item">History</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white nav-item">About Us</a></li>
+                        <li><a href="#" class="hover:text-white nav-item">Contact</a></li>
+                        <li><a href="#" class="hover:text-white nav-item">Feedback</a></li>
+                        <li><a href="#" class="hover:text-white nav-item">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Emergency</h4>
+                    <div class="bg-red-600 p-4 rounded-lg">
+                        <p class="text-sm mb-2">If experiencing severe symptoms:</p>
+                        <p class="font-bold text-lg">Call 911 immediately</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 InsulinTrack. All rights reserved. Always consult your healthcare provider for medical advice.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize application
+        let injections = JSON.parse(localStorage.getItem('injections')) || [];
+        let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+
+        // Update auth button
+        function updateAuthButton() {
+            const authBtn = document.getElementById('authBtn');
+            if (isLoggedIn) {
+                authBtn.textContent = 'Logout';
+                authBtn.onclick = logout;
+            } else {
+                authBtn.textContent = 'Login';
+                authBtn.onclick = login;
+            }
+        }
+
+        function login() {
+            isLoggedIn = true;
+            localStorage.setItem('isLoggedIn', 'true');
+            updateAuthButton();
+            showNotification('Successfully logged in!', 'success');
+        }
+
+        function logout() {
+            isLoggedIn = false;
+            localStorage.removeItem('isLoggedIn');
+            updateAuthButton();
+            showNotification('Successfully logged out!', 'info');
+        }
+
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Set current time for injection form
+        document.getElementById('useCurrentTime').addEventListener('click', function() {
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+            document.getElementById('injectionTime').value = localDateTime.toISOString().slice(0, 16);
+        });
+
+        // Set default time to now
+        window.addEventListener('load', function() {
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+            document.getElementById('injectionTime').value = localDateTime.toISOString().slice(0, 16);
+            updateAuthButton();
+            updateDashboard();
+            renderHistory();
+            initializeChart();
+        });
+
+        // Handle injection form submission
+        document.getElementById('injectionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const injection = {
+                id: Date.now(),
+                time: document.getElementById('injectionTime').value,
+                dose: parseFloat(document.getElementById('dose').value),
+                type: document.getElementById('insulinType').value,
+                site: document.getElementById('injectionSite').value,
+                notes: document.getElementById('notes').value,
+                timestamp: new Date().toISOString()
+            };
+
+            // Check for potential overdose (more than 50 units in 4 hours)
+            const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+            const recentInjections = injections.filter(inj => new Date(inj.time) > fourHoursAgo);
+            const totalRecentDose = recentInjections.reduce((sum, inj) => sum + inj.dose, 0) + injection.dose;
+            
+            if (totalRecentDose > 50) {
+                if (!confirm(`Warning: You're about to log ${totalRecentDose} total units in the last 4 hours. This may be an overdose. Continue?`)) {
+                    return;
+                }
+            }
+
+            injections.push(injection);
+            localStorage.setItem('injections', JSON.stringify(injections));
+            
+            showNotification('Injection logged successfully!', 'success');
+            document.getElementById('injectionForm').reset();
+            
+            // Reset to current time
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+            document.getElementById('injectionTime').value = localDateTime.toISOString().slice(0, 16);
+            
+            updateDashboard();
+            renderHistory();
+            updateChart();
+        });
+
+        // Reset form
+        document.getElementById('resetForm').addEventListener('click', function() {
+            document.getElementById('injectionForm').reset();
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+            document.getElementById('injectionTime').value = localDateTime.toISOString().slice(0, 16);
+        });
+
+        // Quick log button
+        document.getElementById('quickLogBtn').addEventListener('click', function() {
+            document.querySelector('#log-injection').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Update dashboard
+        function updateDashboard() {
+            const today = new Date().toDateString();
+            const todayInjections = injections.filter(inj => new Date(inj.time).toDateString() === today);
+            
+            document.getElementById('todayCount').textContent = todayInjections.length;
+            document.getElementById('todayUnits').textContent = todayInjections.reduce((sum, inj) => sum + inj.dose, 0) + ' IU';
+            
+            if (injections.length > 0) {
+                const lastInj = injections[injections.length - 1];
+                const lastTime = new Date(lastInj.time);
+                document.getElementById('lastInjection').textContent = lastTime.toLocaleTimeString();
+            }
+
+            // Update recent injections
+            const recentContainer = document.getElementById('recentInjections');
+            if (injections.length === 0) {
+                recentContainer.innerHTML = '<div class="text-gray-500 text-center py-8">No injections logged yet. Click "Log Injection Now" to get started!</div>';
+            } else {
+                const recent = injections.slice(-5).reverse();
+                recentContainer.innerHTML = recent.map(inj => `
+                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <div class="font-semibold">${inj.dose} IU - ${inj.type.replace('-', ' ')}</div>
+                            <div class="text-sm text-gray-600">${new Date(inj.time).toLocaleString()}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-600">${inj.site || 'No site specified'}</div>
+                            ${inj.notes ? `<div class="text-xs text-gray-500">${inj.notes}</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Initialize and update chart
+        let weeklyChart;
+
+        function initializeChart() {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            weeklyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Daily Insulin (IU)',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Units (IU)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    }
+                }
+            });
+            updateChart();
+        }
+
+        function updateChart() {
+            if (!weeklyChart) return;
+
+            // Get last 7 days
+            const days = [];
+            const data = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateString = date.toDateString();
+                
+                days.push(date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+                
+                const dayInjections = injections.filter(inj => new Date(inj.time).toDateString() === dateString);
+                const totalUnits = dayInjections.reduce((sum, inj) => sum + inj.dose, 0);
+                data.push(totalUnits);
+            }
+
+            weeklyChart.data.labels = days;
+            weeklyChart.data.datasets[0].data = data;
+            weeklyChart.update();
+        }
+
+        // History filtering and rendering
+        function renderHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            const dateFilter = document.getElementById('dateFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            let filteredInjections = [...injections];
+
+            // Date filtering
+            if (dateFilter !== 'all') {
+                const now = new Date();
+                let filterDate;
+                
+                switch (dateFilter) {
+                    case 'today':
+                        filterDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'week':
+                        filterDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'month':
+                        filterDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        break;
+                }
+                
+                filteredInjections = filteredInjections.filter(inj => new Date(inj.time) >= filterDate);
+            }
+
+            // Type filtering
+            if (typeFilter !== 'all') {
+                filteredInjections = filteredInjections.filter(inj => inj.type === typeFilter);
+            }
+
+            // Search filtering
+            if (searchTerm) {
+                filteredInjections = filteredInjections.filter(inj => 
+                    inj.notes.toLowerCase().includes(searchTerm) ||
+                    inj.type.toLowerCase().includes(searchTerm) ||
+                    inj.site.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (filteredInjections.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            <i class="fas fa-search text-4xl mb-4 text-gray-300"></i>
+                            <div>No injection records found matching your criteria.</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredInjections.reverse().map(inj => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${new Date(inj.time).toLocaleDateString()}</div>
+                        <div class="text-sm text-gray-500">${new Date(inj.time).toLocaleTimeString()}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            ${inj.dose} IU
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${inj.type.replace('-', ' ')}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${inj.site || 'Not specified'}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                        ${inj.notes || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="deleteInjection(${inj.id})" class="text-red-600 hover:text-red-900 hover-scale">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Delete injection
+        function deleteInjection(id) {
+            if (confirm('Are you sure you want to delete this injection record?')) {
+                injections = injections.filter(inj => inj.id !== id);
+                localStorage.setItem('injections', JSON.stringify(injections));
+                renderHistory();
+                updateDashboard();
+                updateChart();
+                showNotification('Injection record deleted successfully!', 'info');
+            }
+        }
+
+        // History filter events
+        document.getElementById('dateFilter').addEventListener('change', renderHistory);
+        document.getElementById('typeFilter').addEventListener('change', renderHistory);
+        document.getElementById('searchInput').addEventListener('input', renderHistory);
+
+        // Export data
+        document.getElementById('exportData').addEventListener('click', function() {
+            if (injections.length === 0) {
+                showNotification('No data to export!', 'warning');
+                return;
+            }
+
+            const csv = [
+                ['Date', 'Time', 'Dose (IU)', 'Insulin Type', 'Injection Site', 'Notes'],
+                ...injections.map(inj => [
+                    new Date(inj.time).toLocaleDateString(),
+                    new Date(inj.time).toLocaleTimeString(),
+                    inj.dose,
+                    inj.type.replace('-', ' '),
+                    inj.site || '',
+                    inj.notes || ''
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `insulin_injections_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Data exported successfully!', 'success');
+        });
+
+        // Profile form
+        document.getElementById('profileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const profile = {
+                fullName: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                diabetesType: document.getElementById('diabetesType').value
+            };
+            localStorage.setItem('userProfile', JSON.stringify(profile));
+            showNotification('Profile updated successfully!', 'success');
+        });
+
+        // Load profile data
+        function loadProfile() {
+            const profile = JSON.parse(localStorage.getItem('userProfile')) || {};
+            document.getElementById('fullName').value = profile.fullName || '';
+            document.getElementById('email').value = profile.email || '';
+            document.getElementById('diabetesType').value = profile.diabetesType || '';
+        }
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            
+            const colors = {
+                success: 'bg-green-500 text-white',
+                error: 'bg-red-500 text-white',
+                warning: 'bg-yellow-500 text-white',
+                info: 'bg-blue-500 text-white'
+            };
+            
+            notification.className += ` ${colors[type]}`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : type === 'warning' ? 'exclamation' : 'info'}-circle mr-2"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Mobile menu toggle
+        document.getElementById('mobileMenu').addEventListener('click', function() {
+            // Implementation for mobile menu would go here
+            showNotification('Mobile menu clicked!', 'info');
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfile();
+            updateDashboard();
+            renderHistory();
+        });
+
+        // Dark mode toggle
+        document.getElementById('darkMode').addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.add('dark');
+                showNotification('Dark mode enabled!', 'info');
+            } else {
+                document.body.classList.remove('dark');
+                showNotification('Dark mode disabled!', 'info');
+            }
+        });
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Check for overdose risk
+        function checkOverdoseRisk() {
+            const now = new Date();
+            const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+            const recentInjections = injections.filter(inj => new Date(inj.time) > twoHoursAgo);
+            
+            if (recentInjections.length > 1) {
+                const totalDose = recentInjections.reduce((sum, inj) => sum + inj.dose, 0);
+                if (totalDose > 30) {
+                    showNotification('Warning: High insulin dose detected in the last 2 hours. Please monitor your blood sugar closely.', 'warning');
+                }
+            }
+        }
+
+        // Run overdose check every 30 minutes
+        setInterval(checkOverdoseRisk, 30 * 60 * 1000);
+    </script>
+</body>
+</html>
